@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MindWave — Blink color lado</title>
+    <title>MindWave — Portería mental</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,36 +15,37 @@
   <body class="noise-bg">
     <main class="app">
       <header class="top">
-        <h1>Blink · color · lado</h1>
+        <h1>Portería mental</h1>
         <p id="conn" class="conn">bridge…</p>
       </header>
 
       <section class="hud">
         <div><span>Attention</span><strong id="att">—</strong></div>
+        <div><span>Umbral</span><strong id="thr">60</strong></div>
         <div><span>Señal</span><strong id="sig">—</strong></div>
-        <div><span>Raw peak</span><strong id="blink">—</strong></div>
-        <div><span>Ensayos</span><strong id="n">0/24</strong></div>
+        <div><span>Tiros</span><strong id="n">0/30</strong></div>
       </section>
 
-      <section id="arena" class="arena noise">
-        <p id="prompt" class="prompt">ESPERA</p>
-        <div id="stim" class="goal L hidden" style="top: 28%">
+      <section id="arena" class="arena portal-arena">
+        <div id="goal" class="goal L" aria-hidden="true">
           <div id="shape" class="shape circle"></div>
         </div>
+        <div class="power-track"><i id="power"></i></div>
+        <p id="prompt" class="prompt">Attention sube la barra · blink = disparo</p>
       </section>
 
       <section id="pred" class="pred wait">
-        <p class="pred-label">Resultado</p>
+        <p class="pred-label">Último tiro</p>
         <p id="pred-text" class="pred-text">—</p>
-        <p id="pred-detail" class="pred-detail">Forma plana + color · izq/der · parpadea al verla</p>
+        <p id="pred-detail" class="pred-detail">Incluye catch (no-go): si blinkeas sin zona verde = falso</p>
       </section>
 
       <section class="actions">
-        <button id="start" type="button">Empezar estudio</button>
+        <button id="start" type="button">Empezar 30 tiros</button>
         <button id="export" type="button" class="ghost" disabled>Exportar JSON (AI)</button>
       </section>
       <pre id="log" class="log"></pre>
     </main>
-    <script type="module" src="/src/calibrate.js"></script>
+    <script type="module" src="/src/portal.js"></script>
   </body>
 </html>

@@ -10,7 +10,9 @@
     "bridge": "node server/tgc-bridge.js",
     "serial": "node server/serial-bridge.js",
     "waves": "vite --open /wave.html",
-    "calibrate": "vite --open /calibrate.html"
+    "calibrate": "vite --open /calibrate.html",
+    "attention": "vite --open /attention.html",
+    "portal": "vite --open /portal.html"
   },
   "devDependencies": {
     "vite": "^8.1.1"

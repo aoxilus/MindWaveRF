@@ -1,71 +1,100 @@
-# Cómo conectar MindWave + wave.html
+# 🔌 Connect MindWave · Conectar MindWave
 
-Guía corta para ver Attention / Meditation / raw / blink en el navegador.
+<p>
+  <strong>EN</strong> — See Attention / Meditation / raw / blink in the browser.<br/>
+  <strong>ES</strong> — Ver Attention / Meditation / raw / blink en el navegador.
+</p>
 
-## 1. Hardware
+---
 
-1. Inserta el **MindWave Wireless USB Adapter** (quita la tapa, USB del PC).
-2. Enciende el headset (pila AAA), sensor en frente, clip en oreja.
-3. Acerca el headset al dongle (~20–50 cm) hasta LED **azul** (enlace RF).  
-   Rojo = encendido pero sin enlace.
+## 1️⃣ Hardware
 
-## 2. Puerto COM
+| Step | 🇺🇸 English | 🇪🇸 Español |
+|------|-------------|------------|
+| 1 | Plug the **MindWave Wireless USB Adapter** (remove the cap) | Inserta el **adaptador USB** (quita la tapa) |
+| 2 | Power headset (AAA), forehead sensor + ear clip | Enciende headset (AAA), sensor frente + clip oreja |
+| 3 | Hold near dongle (~20–50 cm) until **blue LED** | Acerca al dongle hasta LED **azul** |
 
-En Administrador de dispositivos → Puertos (COM y LPT):
+💡 **LED guide · Guía LED**
 
-- Ideal: `MindWave USB Adapter (COMx)`
-- También sirve: `USB-SERIAL CH340 (COMx)` (mismo dongle, driver WCH firmado)
+| Color | Meaning · Significado |
+|-------|------------------------|
+| 🔵 Blue | RF linked · Enlace RF OK |
+| 🔴 Red | On, not linked · Encendido sin enlace |
+| ⚫ Off | No power · Sin pila / no enciende → [`headset-no-power.md`](headset-no-power.md) |
 
-Anota el número (**COM17**, **COM18**, etc.). Puede cambiar al desconectar/reconectar.
+---
 
-## 3. Software de este repo
+## 2️⃣ COM port · Puerto COM
+
+**Device Manager → Ports (COM & LPT)** · Administrador de dispositivos → Puertos
+
+- ✅ Ideal: `MindWave USB Adapter (COMx)`
+- ✅ Also OK: `USB-SERIAL CH340 (COMx)` (same dongle)
+
+📝 Write down the number (`COM17`, `COM18`…). It can change after unplug/replug.  
+· Anota el COM; puede cambiar al desconectar.
+
+---
+
+## 3️⃣ This repo · Este repo
 
 ```powershell
 cd MindWaveRF
 npm install
 
-# Bridge serial → WebSocket (usa TU COM y baud 115200)
+# 🌉 Bridge (use YOUR COM + baud 115200)
 npm run serial -- COM18 115200
 
-# En otra terminal: UI
+# 🖥️ UI (other terminal)
 npm run waves
 ```
 
-Abre:
+| URL | 🇺🇸 | 🇪🇸 |
+|-----|----|----|
+| http://localhost:5173/wave.html | EEG monitor | Monitor EEG |
+| http://localhost:5173/attention.html | Attention calibration | Calibrar Attention |
+| http://localhost:5173/calibrate.html | Blink + color + side | Blink + color + lado |
+| http://localhost:5173/portal.html | Mental goal game | Portería mental |
+| http://localhost:5173/ | Monkey Run | Monkey Run |
 
-| URL | Qué es |
-|-----|--------|
-| http://localhost:5173/wave.html | Monitor EEG + concentrado / blink |
-| http://localhost:5173/calibrate.html | Estudio blink + color + lado |
-| http://localhost:5173/ | Monkey Run (juego) |
+WebSocket: `ws://127.0.0.1:13855` (auto-connect from the pages).
 
-El bridge escucha en `ws://127.0.0.1:13855`. La web se conecta sola.
+### ❓ No packets · Sin paquetes
 
-### Si no hay paquetes
+1. 🔵 Blue LED on headset  
+2. ✅ Correct COM in `npm run serial`  
+3. ⚡ Baud **115200** (57600 often fails with signed CH340)  
+4. ⛔ Don’t open the same COM with TGC **and** `npm run serial`
 
-1. LED azul en el headset.
-2. COM correcto en el comando `npm run serial`.
-3. Baud **115200** (en pruebas locales 57600 a veces no sincroniza con CH340 firmado).
-4. No abras el mismo COM a la vez con ThinkGear Connector y `npm run serial`.
+---
 
-## 4. Paquete oficial NeuroSky (~400 MB)
+## 4️⃣ Official NeuroSky installer (~400 MB)
 
-El instalador “Setup - NeuroSky MindWave” pide insertar el adaptador USB.  
-**Next** se habilita cuando Windows detecta el dongle.
+On *“Please insert the MindWave Wireless USB Adapter”*:
 
-- Quita la tapa del dongle → enchúfalo → espera 2–5 s → **Next**.
-- Si ya estaba enchufado: desconecta, espera, vuelve a conectar.
-- Ese paquete instala apps / drivers oficiales. Puede renombrar el dispositivo o cambiar el COM.
+1. 🧢 Remove dongle cap  
+2. 🔌 Plug into USB  
+3. ⏳ Wait 2–5 s until **Next** enables  
 
-**Convivencia:**
+If already plugged: unplug → wait → replug.
 
-- Si usas **ThinkGear Connector** del paquete oficial: cierra `npm run serial` y usa `npm run bridge` (TGC → WebSocket).
-- Si usas **solo este repo**: `npm run serial -- COMx 115200` + `npm run waves`.
+**Coexistence · Convivencia**
 
-## 5. Qué ver en wave.html
+| Mode | Do this |
+|------|---------|
+| 📦 Official TGC | Close `npm run serial` → `npm run bridge` |
+| 🧪 This repo only | `npm run serial -- COMx 115200` + `npm run waves` |
 
-- **Attention / Meditation** ~1 Hz (eSense del chip ThinkGear).
-- **Raw EEG** ~512 Hz (la curva; blinks = picos grandes).
-- Estado **CONCENTRADO / NO CONCENTRADO / BLINK** (umbrales + detección por pico raw).
+---
 
-Señal mala (`poorSignal` alto): mejora contacto frente + oreja.
+## 5️⃣ What you’ll see in wave.html · Qué verás
+
+| Signal | Rate | Notes |
+|--------|------|-------|
+| 🎯 Attention / Meditation | ~1 Hz | eSense (ThinkGear chip) |
+| 📈 Raw EEG | ~512 Hz | Curve; blinks = big spikes |
+| 🏷️ Status | live | CONCENTRADO / NO / BLINK |
+
+Poor contact (`poorSignal` high) → fix forehead + ear clip.  
+· Señal mala → mejora contacto frente / oreja.

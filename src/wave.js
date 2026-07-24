@@ -176,9 +176,17 @@ let lastPoor = 200
 let lastAttRaw = null
 let lastMedRaw = null
 
+let lastPort = null
+
 function setConn(text, cls) {
-  connEl.textContent = text
+  connEl.textContent = lastPort ? `${text} · ${lastPort}` : text
   connEl.className = `pill ${cls}`
+}
+
+function rememberPort(data) {
+  if (!data.port) return
+  lastPort = data.port
+  metaEl.textContent = `Puerto ${data.port}${data.bytes != null ? ` · bytes ${data.bytes}` : ''}`
 }
 
 function updateState(now) {
@@ -218,18 +226,23 @@ function updateState(now) {
 function handle(data) {
   const now = performance.now()
 
+  rememberPort(data)
+
   if (data.status) {
     if (data.status === 'streaming') setConn('streaming', 'on')
     else if (data.status === 'waiting' || data.status === 'opening') setConn(data.status, 'wait')
-    else if (data.status === 'error' || data.status === 'no_port') setConn(data.status, 'off')
+    else if (data.status === 'error' || data.status === 'no_port') {
+      if (data.status === 'no_port') lastPort = null
+      setConn(data.status, 'off')
+    }
     if (data.hint) hintEl.textContent = data.hint
-    if (data.port) metaEl.textContent = `Puerto ${data.port} · bytes ${data.bytes ?? 0}`
   }
 
   if (data.dongle) {
-    metaEl.textContent = `Dongle: ${data.dongle.state}${
-      data.dongle.headsetId ? ' · ID ' + data.dongle.headsetId : ''
-    }`
+    const dongleBits = [`Dongle: ${data.dongle.state}`]
+    if (data.dongle.headsetId) dongleBits.push(`ID ${data.dongle.headsetId}`)
+    if (lastPort) dongleBits.push(lastPort)
+    metaEl.textContent = dongleBits.join(' · ')
     if (data.dongle.state === 'connected') {
       linked = true
       setConn('conectado', 'on')
@@ -242,9 +255,9 @@ function handle(data) {
     lastPoor = data.poorSignal
     // Más permisivo: MindWave a menudo manda 0–50 con datos útiles
     signalOk = data.poorSignal <= 50
-    const quality = Math.max(0, 100 - data.poorSignal)
-    sigEl.textContent = data.poorSignal === 0 ? 'buena' : String(data.poorSignal)
-    sigBar.style.width = `${100 - quality}%`
+    const quality = Math.max(0, Math.min(100, 100 - data.poorSignal))
+    sigEl.textContent = String(Math.round(quality))
+    sigBar.style.width = `${quality}%`
     if (!signalOk) {
       attSmooth.reset()
       medSmooth.reset()
@@ -346,6 +359,7 @@ function connect() {
   ws.onopen = () => setConn('bridge ok', 'wait')
   ws.onclose = () => {
     linked = false
+    lastPort = null
     setConn('desconectado', 'off')
     setTimeout(connect, 2000)
   }
