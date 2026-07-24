@@ -1,0 +1,236 @@
+:root {
+  --ink: #152033;
+  --mute: #5a6b80;
+  --bg: #d9efff;
+  --ok: #1db954;
+  --warn: #ff8a3d;
+  --bad: #e24b4b;
+  --flash: #fff36a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--ink);
+  font-family: "Source Sans 3", system-ui, sans-serif;
+  background: linear-gradient(165deg, #c8e8ff, #ffe8d4 70%);
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2.5rem;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.top h1 {
+  margin: 0;
+  font-family: "Archivo Black", sans-serif;
+  font-size: clamp(1.6rem, 5vw, 2.2rem);
+}
+
+.conn {
+  margin: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+
+.hud span {
+  display: block;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+
+.hud strong {
+  font-family: "Archivo Black", sans-serif;
+  font-size: 1.35rem;
+}
+
+.arena {
+  position: relative;
+  height: min(42vh, 320px);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 3px solid rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  user-select: none;
+  cursor: pointer;
+}
+
+.arena.wait {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.arena.ready {
+  background: rgba(255, 200, 80, 0.25);
+}
+
+.arena.go {
+  background: rgba(29, 185, 84, 0.2);
+  border-color: var(--ok);
+}
+
+.arena.flash {
+  background: var(--flash);
+  border-color: #e0c000;
+}
+
+.arena.miss {
+  background: rgba(226, 75, 75, 0.18);
+  border-color: var(--bad);
+}
+
+.prompt {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-family: "Archivo Black", sans-serif;
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  pointer-events: none;
+}
+
+.ball {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, #ff5a8a 55%, #c02060);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transform: translate(-50%, -50%);
+}
+
+.ball.hidden {
+  display: none;
+}
+
+.pred {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.pred.focus {
+  border-color: var(--ok);
+  background: rgba(29, 185, 84, 0.15);
+}
+
+.pred.loose {
+  border-color: var(--warn);
+  background: rgba(255, 138, 61, 0.15);
+}
+
+.pred.bad {
+  border-color: var(--bad);
+  background: rgba(226, 75, 75, 0.12);
+}
+
+.pred-label {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mute);
+}
+
+.pred-text {
+  margin: 0.25rem 0 0;
+  font-family: "Archivo Black", sans-serif;
+  font-size: 1.7rem;
+}
+
+.pred-detail {
+  margin: 0.3rem 0 0;
+  color: var(--mute);
+  font-size: 0.9rem;
+}
+
+.actions {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.actions button {
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  font-family: "Archivo Black", sans-serif;
+  font-size: 1rem;
+  padding: 0.85rem 1.4rem;
+  border-radius: 999px;
+  background: #152033;
+  color: #fff;
+}
+
+.actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.hint {
+  margin: 0.7rem 0 0;
+  color: var(--mute);
+  font-size: 0.88rem;
+}
+
+kbd {
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 0.85em;
+}
+
+.log-wrap {
+  margin-top: 1.4rem;
+}
+
+.log-wrap h2 {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--mute);
+}
+
+#log {
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: rgba(21, 32, 51, 0.9);
+  color: #c8e8ff;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 560px) {
+  .hud {
+    grid-template-columns: 1fr 1fr;
+  }
+}

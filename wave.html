@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MindReader — Ondas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/wave.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="top">
+        <h1>MindReader</h1>
+        <p class="sub">Monitor EEG · ThinkGear</p>
+        <div id="conn" class="pill off">desconectado</div>
+      </header>
+
+      <section id="state" class="state wait">
+        <p id="state-label" class="state-label">ESPERANDO</p>
+        <p id="state-hint" class="state-hint">Sensor frente + clip oreja</p>
+      </section>
+
+      <section class="meters">
+        <div class="meter">
+          <span>Attention</span>
+          <strong id="att">—</strong>
+          <div class="track"><i id="att-bar"></i></div>
+        </div>
+        <div class="meter">
+          <span>Meditation</span>
+          <strong id="med">—</strong>
+          <div class="track"><i id="med-bar"></i></div>
+        </div>
+        <div class="meter">
+          <span>Señal</span>
+          <strong id="sig">—</strong>
+          <div class="track invert"><i id="sig-bar"></i></div>
+        </div>
+        <div class="meter">
+          <span>Blink</span>
+          <strong id="blink">0</strong>
+          <div class="track blink-track"><i id="blink-bar"></i></div>
+        </div>
+      </section>
+
+      <section class="scope">
+        <div class="scope-head">
+          <h2>Raw EEG</h2>
+          <span id="hz">512 Hz</span>
+        </div>
+        <canvas id="raw" width="1200" height="220"></canvas>
+      </section>
+
+      <section class="bands">
+        <h2>Espectro</h2>
+        <div id="band-grid" class="band-grid"></div>
+      </section>
+
+      <footer class="foot">
+        <p id="hint">
+          Corre <code>npm run serial -- COM18 115200</code> con el dongle USB.
+        </p>
+        <p id="meta" class="meta"></p>
+      </footer>
+    </div>
+    <script type="module" src="/src/wave.js"></script>
+  </body>
+</html>

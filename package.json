@@ -1,0 +1,23 @@
+{
+  "name": "mindwave-rf",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "bridge": "node server/tgc-bridge.js",
+    "serial": "node server/serial-bridge.js",
+    "waves": "vite --open /wave.html",
+    "calibrate": "vite --open /calibrate.html"
+  },
+  "devDependencies": {
+    "vite": "^8.1.1"
+  },
+  "dependencies": {
+    "serialport": "^13.0.0",
+    "three": "^0.185.1",
+    "ws": "^8.21.1"
+  }
+}

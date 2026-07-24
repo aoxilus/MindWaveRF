@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MindWave — Estudio blink + color</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Source+Sans+3:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/calibrate.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="top">
+        <h1>Blink · color · lado</h1>
+        <p id="conn" class="conn">bridge…</p>
+      </header>
+
+      <section class="hud">
+        <div><span>Attention</span><strong id="att">—</strong></div>
+        <div><span>Señal</span><strong id="sig">—</strong></div>
+        <div><span>Raw peak</span><strong id="blink">—</strong></div>
+        <div><span>Ensayos</span><strong id="n">0/24</strong></div>
+      </section>
+
+      <section id="arena" class="arena wait">
+        <p id="prompt" class="prompt">ESPERA</p>
+        <div id="ball" class="ball hidden" aria-hidden="true"></div>
+      </section>
+
+      <section id="pred" class="pred wait">
+        <p class="pred-label">Resultado del ensayo</p>
+        <p id="pred-text" class="pred-text">—</p>
+        <p id="pred-detail" class="pred-detail">
+          Ver bola → parpadea. Grabamos: color, izq/der, Attention, ¿hubo blink?
+        </p>
+      </section>
+
+      <section class="actions">
+        <button id="start" type="button">Empezar estudio</button>
+        <p class="hint">No uses teclado. Solo <strong>parpadea</strong> cuando veas la bola de color.</p>
+      </section>
+
+      <section class="log-wrap">
+        <h2>Registro (se guarda)</h2>
+        <pre id="log"></pre>
+      </section>
+    </main>
+    <script type="module" src="/src/calibrate.js"></script>
+  </body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MindReader — Monkey Run</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Source+Sans+3:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game"></canvas>
+
+      <header class="hud-top">
+        <div class="brand">MindReader</div>
+        <div class="score-wrap">
+          <span class="label">distancia</span>
+          <span id="score">0</span>
+        </div>
+      </header>
+
+      <aside class="hud-mind">
+        <div class="mind-row">
+          <span>Attention</span>
+          <strong id="attention-val">50</strong>
+        </div>
+        <div class="bar"><i id="attention-bar"></i></div>
+        <div class="mind-row subtle">
+          <span id="lane-label">centro</span>
+          <span id="signal-label">teclado</span>
+        </div>
+        <label class="sim">
+          Simular atención
+          <input id="attention-slider" type="range" min="0" max="100" value="25" />
+        </label>
+      </aside>
+
+      <div id="overlay" class="overlay">
+        <div class="panel">
+          <p class="eyebrow">NeuroSky · Three.js</p>
+          <h1>Monkey Run</h1>
+          <p class="blurb">
+            Selva alegre en bajada. Solo izquierda o derecha con la mente;
+            cada obstaculo deja libre el otro lado.
+          </p>
+          <button id="start-btn" type="button">Correr</button>
+          <p class="hint">Teclado: A D / ← → · Espacio</p>
+        </div>
+      </div>
+
+      <div id="gameover" class="overlay hidden">
+        <div class="panel">
+          <h1>Golpe</h1>
+          <p class="blurb">Distancia: <strong id="final-score">0</strong></p>
+          <button id="retry-btn" type="button">Seguir</button>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
