@@ -95,6 +95,12 @@ async function main() {
     return
   }
 
+  let bytes = 0
+  let syncHint = false
+  let prev = 0
+  let rfConnected = false
+  let lastRfRetry = 0
+
   const parser = createThinkGearParser((pkt) => {
     const out = { source: 'serial', port: path }
     if (pkt.attention != null) out.attention = pkt.attention
@@ -109,7 +115,12 @@ async function main() {
     }
     if (pkt.raw != null) out.raw = pkt.raw
     if (pkt.bands) out.bands = pkt.bands
-    if (pkt.dongle) out.dongle = pkt.dongle
+    if (pkt.dongle) {
+      out.dongle = pkt.dongle
+      const st = pkt.dongle.state
+      rfConnected = st === 'connected'
+      if (st === 'disconnected' || st === 'denied' || st === 'standby') rfConnected = false
+    }
     broadcast(out)
     if (pkt.dongle) console.log('[dongle]', pkt.dongle)
     if (pkt.attention != null) {
@@ -119,9 +130,6 @@ async function main() {
     }
   })
 
-  let bytes = 0
-  let syncHint = false
-  let prev = 0
   port.on('data', (chunk) => {
     bytes += chunk.length
     for (let i = 0; i < chunk.length; i++) {
@@ -146,29 +154,36 @@ async function main() {
     setTimeout(main, 3000)
   })
 
-  // MindWave RF: auto-connect a cualquier headset en rango (~10s)
+  // MindWave RF: auto-connect (~10s scan). Reintentar mientras NO esté linked,
+  // aunque ya haya AA AA (el dongle manda status sin headset azul).
+  function kickRf(reason) {
+    const now = Date.now()
+    if (now - lastRfRetry < 4500) return
+    lastRfRetry = now
+    console.log(`\n[serial] RF kick (${reason}) — 0xC1 → 0xC2`)
+    port.write(RF.DISCONNECT)
+    setTimeout(() => port.write(RF.AUTO_CONNECT), 350)
+  }
+
   console.log('[serial] Enviando RF AUTO_CONNECT (0xC2)…')
   console.log('         Enciende el headset (LED), sensor en frente + clip en oreja.')
-  port.write(RF.DISCONNECT)
-  setTimeout(() => port.write(RF.AUTO_CONNECT), 400)
+  kickRf('start')
 
-  // Re-intentar auto-connect cada 12s si no hay sync
   const retry = setInterval(() => {
-    if (syncHint) return
-    console.log('\n[serial] Sin paquetes ThinkGear — reenvío 0xC2')
-    console.log('         Si el puerto es "CH340", instala driver MindWave USB Adapter.')
-    port.write(RF.DISCONNECT)
-    setTimeout(() => port.write(RF.AUTO_CONNECT), 300)
-  }, 12000)
+    if (rfConnected) return
+    kickRf(syncHint ? 'searching-with-sync' : 'no-link')
+  }, 5000)
 
   setInterval(() => {
     broadcast({
-      status: syncHint ? 'streaming' : 'waiting',
+      status: rfConnected ? 'streaming' : 'waiting',
       port: path,
       bytes,
-      hint: syncHint
+      hint: rfConnected
         ? 'ok'
-        : 'Sin AA AA. ¿Headset ON? ¿Driver MindWave (no CH340)?',
+        : syncHint
+          ? 'Dongle OK · buscando headset (LED azul). Acerca + pila AAA.'
+          : 'Sin AA AA. ¿COM correcto? ¿Driver CH340/MindWave?',
     })
   }, 2000)
 

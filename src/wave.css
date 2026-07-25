@@ -111,6 +111,12 @@ body {
   color: var(--lime);
 }
 
+.state.relax {
+  border-color: var(--teal);
+  background: rgba(94, 200, 184, 0.14);
+  color: var(--teal);
+}
+
 .state.loose {
   border-color: var(--warn);
   background: rgba(224, 164, 90, 0.12);

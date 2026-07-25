@@ -13,9 +13,9 @@ const BANDS = [
 
 /** Escala Y raw MindWave (mismo bound que el scope). */
 const RAW_Y = 2048
-/** Puntos en pantalla + decimate → ~8 s @ 512 Hz. */
-const RAW_N = 320
-const RAW_DECIMATE = 12
+/** ~1 s de raw interno @ 512; en pantalla promediamos de 3 en 3. */
+const RAW_N = 512
+const AVG_N = 5
 const BAND_N = 60
 
 const connEl = document.querySelector('#conn')
@@ -44,8 +44,49 @@ const bandGrid = document.querySelector('#band-grid')
 
 const rawBuf = new Float32Array(RAW_N)
 let rawWrite = 0
-let rawSkip = 0
 let bandMax = 1
+let avgAcc = 0
+let avgCount = 0
+
+/** Cola + ritmo fijo @ 512 Hz interno. */
+const FS_RAW = 512
+const rawQueue = []
+const RAW_Q_MAX = 2048
+let rawPaceAt = 0
+let rawPaceCarry = 0
+
+function enqueueRaw(v) {
+  rawQueue.push(v)
+  if (rawQueue.length > RAW_Q_MAX) rawQueue.splice(0, rawQueue.length - RAW_Q_MAX)
+}
+
+function drainRaw(now) {
+  if (!rawPaceAt) {
+    rawPaceAt = now
+    return
+  }
+  const dt = Math.min(50, now - rawPaceAt)
+  rawPaceAt = now
+  rawPaceCarry += (dt / 1000) * FS_RAW
+  let n = Math.floor(rawPaceCarry)
+  rawPaceCarry -= n
+  if (rawQueue.length > 300) n = Math.min(rawQueue.length, n + 12)
+  if (rawQueue.length > 800) n = Math.min(rawQueue.length, n + 40)
+  while (n-- > 0 && rawQueue.length) {
+    const v = rawQueue.shift()
+    // Interno full-rate (FFT / blink ya vio el raw al llegar)
+    pushFftSample(v)
+    // Pantalla: promedio de AVG_N muestras → 1 punto
+    avgAcc += v
+    avgCount++
+    if (avgCount >= AVG_N) {
+      rawBuf[rawWrite % RAW_N] = avgAcc / AVG_N
+      rawWrite++
+      avgAcc = 0
+      avgCount = 0
+    }
+  }
+}
 
 /** FFT del raw a 512 Hz (no decimado). */
 const FS = 512
@@ -231,7 +272,7 @@ for (const [key, label] of BANDS) {
   bandCtx[key] = c.getContext('2d')
 }
 
-if (hzEl) hzEl.textContent = `~${Math.round(512 / RAW_DECIMATE)} Hz · ${((RAW_N * RAW_DECIMATE) / 512).toFixed(0)} s`
+if (hzEl) hzEl.textContent = `512 Hz in · avg×${AVG_N} out`
 
 // fondo inicial espectrograma
 fftSpecCtx.fillStyle = '#050c0a'
@@ -265,35 +306,53 @@ function createSmoothMetric(alpha = 0.45, win = 5) {
 }
 
 /**
- * Concentrado / no concentrado con histéresis suave.
- * Umbrales más bajos para MindWave real (suele oscilar 30–90).
+ * Estados mentales con histéresis (Attention vs Meditation).
+ * concentrado | relajado | neutro
  */
-function createFocusClassifier({ enter = 52, exit = 38, holdMs = 280 } = {}) {
-  let focused = false
+function createMindMode({
+  attEnter = 62,
+  attExit = 48,
+  medEnter = 62,
+  medExit = 48,
+  holdMs = 450,
+} = {}) {
+  let mode = 'neutro'
   let pending = null
   let pendingAt = 0
+
+  function wantMode(att, med) {
+    const a = att ?? 0
+    const m = med ?? 0
+    const wantFocus = mode === 'concentrado' ? a >= attExit : a >= attEnter
+    const wantRelax = mode === 'relajado' ? m >= medExit : m >= medEnter
+    if (wantFocus && wantRelax) return a >= m ? 'concentrado' : 'relajado'
+    if (wantFocus) return 'concentrado'
+    if (wantRelax) return 'relajado'
+    return 'neutro'
+  }
+
   return {
-    update(attention, now) {
-      if (attention == null) return focused
-      const want = focused ? attention >= exit : attention >= enter
-      if (want === focused) {
+    update(att, med, now) {
+      if (att == null && med == null) return mode
+      const next = wantMode(att, med)
+      if (next === mode) {
         pending = null
-        return focused
+        return mode
       }
-      if (pending !== want) {
-        pending = want
+      if (pending !== next) {
+        pending = next
         pendingAt = now
-        return focused
+        return mode
       }
       if (now - pendingAt >= holdMs) {
-        focused = want
+        mode = next
         pending = null
       }
-      return focused
+      return mode
     },
-    isFocused: () => focused,
+    mode: () => mode,
     reset() {
-      focused = false
+      mode = 'neutro'
       pending = null
     },
   }
@@ -301,7 +360,7 @@ function createFocusClassifier({ enter = 52, exit = 38, holdMs = 280 } = {}) {
 
 /**
  * Blink: blinkStrength (si viene) + pico en raw EEG (lo que ves en la gráfica).
- * MindWave RF a menudo NO manda 0x16 blink; el spike raw es la fuente real.
+ * Umbrales más altos + exige señal OK para no contar ruido como blink.
  */
 function createBlinkDetector() {
   let count = 0
@@ -311,11 +370,13 @@ function createBlinkDetector() {
   let prevRaw = 0
   let baseline = 0
   let ready = false
-  const PEAK_MIN = 380
-  const DELTA_MIN = 280
+  const PEAK_MIN = 520
+  const DELTA_MIN = 320
+  const PEAK_HARD = 900
+  const COOLDOWN_MS = 520
 
   function fire(now, strength = 70) {
-    if (now - lastAt < 320) return false
+    if (now - lastAt < COOLDOWN_MS) return false
     lastAt = now
     count++
     flashUntil = now + 550
@@ -325,29 +386,30 @@ function createBlinkDetector() {
 
   return {
     fromStrength(s, now) {
-      if (typeof s !== 'number' || s < 20) return false
+      if (typeof s !== 'number' || s < 45) return false
       return fire(now, Math.min(100, s))
     },
     fromFlag(now) {
       return fire(now, 80)
     },
-    fromRaw(raw, _signalOk, now) {
-      if (typeof raw !== 'number') return false
+    fromRaw(raw, signalOk, now) {
+      if (typeof raw !== 'number' || !signalOk) return false
       if (!ready) {
         prevRaw = raw
         baseline = raw
         ready = true
         return false
       }
-      // Baseline lenta en reposo; no se actualiza fuerte durante un spike
       const delta = Math.abs(raw - prevRaw)
       const peak = Math.abs(raw - baseline)
       prevRaw = raw
-      if (peak < PEAK_MIN * 0.45) {
-        baseline = baseline * 0.98 + raw * 0.02
+      if (peak < PEAK_MIN * 0.4) {
+        baseline = baseline * 0.97 + raw * 0.03
       }
-      if (peak < PEAK_MIN && delta < DELTA_MIN) return false
-      return fire(now, Math.min(100, Math.max(peak, delta) / 12))
+      // Ruido: un solo salto. Blink real: pico vs baseline + flanco (o pico enorme).
+      const ok = (peak >= PEAK_MIN && delta >= DELTA_MIN) || peak >= PEAK_HARD
+      if (!ok) return false
+      return fire(now, Math.min(100, Math.max(peak, delta) / 14))
     },
     tick(now) {
       return now < flashUntil
@@ -363,7 +425,7 @@ function createBlinkDetector() {
 
 const attSmooth = createSmoothMetric(0.5, 4)
 const medSmooth = createSmoothMetric(0.4, 4)
-const focus = createFocusClassifier()
+const mind = createMindMode()
 const blinks = createBlinkDetector()
 
 let signalOk = false
@@ -387,8 +449,9 @@ function rememberPort(data) {
 
 function updateState(now) {
   const att = attSmooth.value()
+  const med = medSmooth.value()
   const blinking = blinks.tick(now)
-  const focused = focus.update(att, now)
+  const mode = mind.update(att, med, now)
 
   if (!linked) {
     stateEl.className = 'state wait'
@@ -408,15 +471,21 @@ function updateState(now) {
     stateHint.textContent = `Parpadeo #${blinks.count()}`
     return
   }
-  if (focused) {
+  if (mode === 'concentrado') {
     stateEl.className = 'state focus'
     stateLabel.textContent = 'CONCENTRADO'
-    stateHint.textContent = `att ${Math.round(att ?? 0)} ≥ 52`
+    stateHint.textContent = `att ${Math.round(att ?? 0)} · med ${Math.round(med ?? 0)}`
+    return
+  }
+  if (mode === 'relajado') {
+    stateEl.className = 'state relax'
+    stateLabel.textContent = 'RELAJADO'
+    stateHint.textContent = `med ${Math.round(med ?? 0)} · att ${Math.round(att ?? 0)}`
     return
   }
   stateEl.className = 'state loose'
-  stateLabel.textContent = 'NO CONCENTRADO'
-  stateHint.textContent = `att ${Math.round(att ?? 0)} · enfoca para subir`
+  stateLabel.textContent = 'NEUTRO'
+  stateHint.textContent = `att ${Math.round(att ?? 0)} · med ${Math.round(med ?? 0)}`
 }
 
 function handle(data) {
@@ -449,15 +518,15 @@ function handle(data) {
 
   if (typeof data.poorSignal === 'number') {
     lastPoor = data.poorSignal
-    // Más permisivo: MindWave a menudo manda 0–50 con datos útiles
-    signalOk = data.poorSignal <= 50
+    // Más estricto para blink/foco: ruido con poorSignal 26–50 ya ensucia raw
+    signalOk = data.poorSignal <= 25
     const quality = Math.max(0, Math.min(100, 100 - data.poorSignal))
     sigEl.textContent = String(Math.round(quality))
     sigBar.style.width = `${quality}%`
     if (!signalOk) {
       attSmooth.reset()
       medSmooth.reset()
-      focus.reset()
+      mind.reset()
     }
   }
 
@@ -489,15 +558,8 @@ function handle(data) {
   }
 
   if (typeof data.raw === 'number') {
-    pushFftSample(data.raw)
-    rawSkip++
-    if (rawSkip >= RAW_DECIMATE) {
-      rawSkip = 0
-      rawBuf[rawWrite % RAW_N] = data.raw
-      rawWrite++
-    }
-    // Detectar blink aunque poorSignal suba un instante (el blink ensucia la señal)
-    blinks.fromRaw(data.raw, true, now)
+    enqueueRaw(data.raw)
+    blinks.fromRaw(data.raw, signalOk, now)
   }
 
   if (data.bands) {
@@ -551,6 +613,7 @@ function drawBand(key) {
 
 function draw() {
   const now = performance.now()
+  drainRaw(now)
   updateState(now)
   blinkBar.style.width = `${blinks.flashStrength(now)}%`
 

@@ -68,12 +68,13 @@ export function saveStudyBackstage(filename, payload) {
   downloadJson(filename, payload)
 }
 
-export function createBlinkFromRaw({ peakMin = 380, deltaMin = 280, cooldownMs = 320 } = {}) {
+export function createBlinkFromRaw({ peakMin = 520, deltaMin = 320, cooldownMs = 520 } = {}) {
   let prev = 0
   let baseline = 0
   let ready = false
   let lastAt = 0
   let peak = 0
+  const peakHard = Math.max(900, peakMin * 1.7)
 
   return {
     feed(raw, now = performance.now()) {
@@ -89,11 +90,12 @@ export function createBlinkFromRaw({ peakMin = 380, deltaMin = 280, cooldownMs =
       const p = Math.abs(raw - baseline)
       prev = raw
       if (p > peak) peak = p
-      if (p < peakMin * 0.45) baseline = baseline * 0.98 + raw * 0.02
+      if (p < peakMin * 0.4) baseline = baseline * 0.97 + raw * 0.03
       if (now - lastAt < cooldownMs) return null
-      if (p < peakMin && delta < deltaMin) return null
+      const ok = (p >= peakMin && delta >= deltaMin) || p >= peakHard
+      if (!ok) return null
       lastAt = now
-      const strength = Math.min(100, Math.max(p, delta) / 12)
+      const strength = Math.min(100, Math.max(p, delta) / 14)
       return { source: 'raw', strength, peak: p, delta, t: now }
     },
     resetPeak() {
@@ -157,12 +159,12 @@ export function createMindwaveClient({ onUpdate, onBlink } = {}) {
       }
       if (typeof data.meditation === 'number') state.meditation = data.meditation
 
-      if (typeof data.blinkStrength === 'number' && data.blinkStrength >= 20) {
+      if (typeof data.blinkStrength === 'number' && data.blinkStrength >= 45) {
         onBlink?.({ source: 'headset', strength: data.blinkStrength, t: now })
       }
       if (data.blink || data.jump) onBlink?.({ source: 'headset', strength: 60, t: now })
 
-      if (typeof data.raw === 'number') {
+      if (typeof data.raw === 'number' && state.poorSignal <= 25) {
         const hit = blink.feed(data.raw, now)
         if (hit) onBlink?.(hit)
       }
