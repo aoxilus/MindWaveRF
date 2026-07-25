@@ -212,6 +212,26 @@ body {
   border: 1px solid var(--line);
 }
 
+#fft-spec,
+#fft-line {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
+}
+
+#fft-line {
+  margin-top: 0.4rem;
+}
+
+.fft-legend {
+  margin: 0.4rem 0 0;
+  color: var(--mute);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
 .band-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -224,8 +244,15 @@ body {
   background: rgba(0, 0, 0, 0.2);
 }
 
+.band-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
 .band label {
-  display: block;
   color: var(--mute);
   font-size: 0.68rem;
   text-transform: uppercase;
@@ -233,21 +260,16 @@ body {
 }
 
 .band b {
-  display: block;
-  margin: 0.25rem 0 0.45rem;
   font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.band .bar {
-  height: 3px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.band .bar i {
+.band canvas {
+  width: 100%;
+  height: 56px;
   display: block;
-  height: 100%;
-  width: 0%;
-  background: var(--teal);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--line);
 }
 
 .foot {

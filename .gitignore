@@ -23,3 +23,7 @@ npm-debug.log*
 
 # Sandbox output
 sandbox/last-probe.log
+
+# Large local study dumps (waveLog); keep analysis under docs/studies/
+study/*.json
+!study/.gitkeep

@@ -65,4 +65,18 @@ We **keep** color + L/R labels on purpose.
 
 With a 1-channel MindWave you **cannot prove** perceptual decoding from EEG alone — but you **can** hunt for correlations (Attention / latency × stimulus). Ask the AI to separate those clearly.
 
-📚 Also see: [`github-neurosky-landscape.md`](github-neurosky-landscape.md)
+📚 Also see: [`github-neurosky-landscape.md`](github-neurosky-landscape.md) · [`../function-vectors.md`](../function-vectors.md) · [`../tasks.md`](../tasks.md)
+
+---
+
+## 📦 Saved sessions · Sesiones
+
+| File | Notes |
+|------|--------|
+| `study/mindwave-exam-*.json` (local) | Full waveLog — gitignored (too large) |
+| [`mindwave-exam-20260724-1803.stats.json`](mindwave-exam-20260724-1803.stats.json) | Stats for math AI |
+| [`mindwave-exam-analysis-2026-07-24.md`](mindwave-exam-analysis-2026-07-24.md) | Deducción: att lectura≫figuras; color/lado/forma no explican RT |
+| [`blink-color-session-2026-07-24.json`](blink-color-session-2026-07-24.json) | Blink+color n=24 |
+| [`blink-color-analysis-2026-07-24.md`](blink-color-analysis-2026-07-24.md) | Análisis blink+color |
+
+<p align="center">🥑 <a href="https://github.com/aoxilus">aoxilus</a></p>

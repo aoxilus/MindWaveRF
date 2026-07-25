@@ -1,0 +1,333 @@
+{
+  "file": "study/mindwave-exam-20260724-1803.json",
+  "at": "2026-07-25T00:03:51.401Z",
+  "study": "reading-waves-then-shape-position-color",
+  "promptHint": "Analiza ondas (waveLog + att) DURANTE lectura vs figuras. Posición L/C/R, forma, color con repeticiones. Latencia blink en 0. El blink 1-3 marca fin de lectura. No asumas decodificación de color desde 1 canal.",
+  "n": 54,
+  "hits": 54,
+  "hitRate": 1,
+  "signalOk": false,
+  "sources": [
+    "raw"
+  ],
+  "durationApproxSec": 242.4,
+  "reading": {
+    "attMean": 68.4,
+    "attDuringRead": [
+      77,
+      54,
+      63,
+      74,
+      74
+    ],
+    "endBlinkOk": true,
+    "endBlinkNeed": 3,
+    "endBlinkSource": "raw",
+    "readWindowMs": 3217
+  },
+  "latency": {
+    "mean": 502.8,
+    "median": 482,
+    "sd": 175.6,
+    "min": 66,
+    "max": 1266
+  },
+  "att": {
+    "figMean": 47.1,
+    "figMed": 48.5,
+    "figSd": 16.6,
+    "zeroMean": 45.9,
+    "medMean": 49.1,
+    "peakMean": 398.3,
+    "peakMin": 380,
+    "peakMax": 437.6
+  },
+  "corr": {
+    "attFig_vs_lat": 0.165,
+    "attZero_vs_lat": 0.061,
+    "med_vs_lat": 0.178,
+    "peak_vs_lat": -0.085,
+    "attFig_vs_peak": 0.073,
+    "attReadMean_minus_attFigMean": 21.3
+  },
+  "etaSq_latency": {
+    "side": 0.012,
+    "shape": 0.017,
+    "color": 0.033
+  },
+  "bySide": {
+    "L": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 512.2,
+      "latMed": 447,
+      "attFig": 50.5,
+      "attZero": 48.6,
+      "med": 49.1,
+      "peak": 403.2
+    },
+    "R": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 476.1,
+      "latMed": 482,
+      "attFig": 48.4,
+      "attZero": 49.3,
+      "med": 53.4,
+      "peak": 398.4
+    },
+    "C": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 520.1,
+      "latMed": 526,
+      "attFig": 42.3,
+      "attZero": 39.9,
+      "med": 44.8,
+      "peak": 393.3
+    }
+  },
+  "byShape": {
+    "circle": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 534.4,
+      "latMed": 495.5,
+      "attFig": 47.3,
+      "attZero": 45.9,
+      "med": 52.9,
+      "peak": 396.6
+    },
+    "square": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 486.9,
+      "latMed": 482,
+      "attFig": 48.6,
+      "attZero": 44,
+      "med": 48.1,
+      "peak": 398.6
+    },
+    "triangle": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 487,
+      "latMed": 464.5,
+      "attFig": 45.3,
+      "attZero": 47.9,
+      "med": 46.2,
+      "peak": 399.8
+    }
+  },
+  "byColor": {
+    "G": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 539.9,
+      "latMed": 521.5,
+      "attFig": 48.8,
+      "attZero": 47.7,
+      "med": 52.9,
+      "peak": 393.9
+    },
+    "B": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 462.3,
+      "latMed": 455,
+      "attFig": 40.5,
+      "attZero": 41.3,
+      "med": 40.7,
+      "peak": 398.7
+    },
+    "R": {
+      "n": 18,
+      "hit": 18,
+      "latMean": 506.2,
+      "latMed": 508.5,
+      "attFig": 51.9,
+      "attZero": 48.8,
+      "med": 53.7,
+      "peak": 402.3
+    }
+  },
+  "phases": {
+    "reading": {
+      "nUpdates": 4,
+      "attMean": 67,
+      "attMed": 68.5,
+      "attSd": 10.6,
+      "attMin": 54,
+      "attMax": 77,
+      "medMean": 33.3,
+      "medMed": 34.5,
+      "signalMean": 0,
+      "signalMax": 0
+    },
+    "endblink": {
+      "nUpdates": 2,
+      "attMean": 75.5,
+      "attMed": 75.5,
+      "attSd": 2.1,
+      "attMin": 74,
+      "attMax": 77,
+      "medMean": 56.5,
+      "medMed": 56.5,
+      "signalMean": 0,
+      "signalMax": 0
+    },
+    "figure": {
+      "nUpdates": 237,
+      "attMean": 47.3,
+      "attMed": 47,
+      "attSd": 18.4,
+      "attMin": 1,
+      "attMax": 96,
+      "medMean": 49.3,
+      "medMed": 48,
+      "signalMean": 0,
+      "signalMax": 0
+    }
+  },
+  "waveLog": {
+    "rows": 125715,
+    "uniqueAttUpdates": 243
+  },
+  "cells": {
+    "L|circle|G": {
+      "n": 2,
+      "latMean": 635.5,
+      "latMed": 635.5
+    },
+    "R|square|B": {
+      "n": 2,
+      "latMean": 346.5,
+      "latMed": 346.5
+    },
+    "L|square|B": {
+      "n": 2,
+      "latMean": 439,
+      "latMed": 439
+    },
+    "R|circle|G": {
+      "n": 2,
+      "latMean": 531.5,
+      "latMed": 531.5
+    },
+    "R|circle|B": {
+      "n": 2,
+      "latMean": 609.5,
+      "latMed": 609.5
+    },
+    "C|circle|G": {
+      "n": 2,
+      "latMean": 464.5,
+      "latMed": 464.5
+    },
+    "R|triangle|R": {
+      "n": 2,
+      "latMean": 328.5,
+      "latMed": 328.5
+    },
+    "C|square|R": {
+      "n": 2,
+      "latMean": 539.5,
+      "latMed": 539.5
+    },
+    "R|triangle|G": {
+      "n": 2,
+      "latMean": 553.5,
+      "latMed": 553.5
+    },
+    "L|triangle|B": {
+      "n": 2,
+      "latMean": 393.5,
+      "latMed": 393.5
+    },
+    "L|square|R": {
+      "n": 2,
+      "latMean": 438.5,
+      "latMed": 438.5
+    },
+    "L|triangle|G": {
+      "n": 2,
+      "latMean": 543,
+      "latMed": 543
+    },
+    "C|triangle|R": {
+      "n": 2,
+      "latMean": 504,
+      "latMed": 504
+    },
+    "R|triangle|B": {
+      "n": 2,
+      "latMean": 525,
+      "latMed": 525
+    },
+    "R|circle|R": {
+      "n": 2,
+      "latMean": 300.5,
+      "latMed": 300.5
+    },
+    "R|square|G": {
+      "n": 2,
+      "latMean": 515.5,
+      "latMed": 515.5
+    },
+    "R|square|R": {
+      "n": 2,
+      "latMean": 574,
+      "latMed": 574
+    },
+    "C|triangle|G": {
+      "n": 2,
+      "latMean": 584,
+      "latMed": 584
+    },
+    "L|triangle|R": {
+      "n": 2,
+      "latMean": 438,
+      "latMed": 438
+    },
+    "L|circle|R": {
+      "n": 2,
+      "latMean": 883,
+      "latMed": 883
+    },
+    "L|square|G": {
+      "n": 2,
+      "latMean": 427,
+      "latMed": 427
+    },
+    "L|circle|B": {
+      "n": 2,
+      "latMean": 412,
+      "latMed": 412
+    },
+    "C|circle|R": {
+      "n": 2,
+      "latMean": 549.5,
+      "latMed": 549.5
+    },
+    "C|square|G": {
+      "n": 2,
+      "latMean": 604.5,
+      "latMed": 604.5
+    },
+    "C|circle|B": {
+      "n": 2,
+      "latMean": 424,
+      "latMed": 424
+    },
+    "C|triangle|B": {
+      "n": 2,
+      "latMean": 513.5,
+      "latMed": 513.5
+    },
+    "C|square|B": {
+      "n": 2,
+      "latMean": 497.5,
+      "latMed": 497.5
+    }
+  }
+}

@@ -64,11 +64,19 @@ Paper útil ([bciBasedWheelchair](https://github.com/pktparticle/bciBasedWheelch
 
 ## Próximos experimentos útiles (alineados a la comunidad)
 
-1. **Attention → velocidad** en Monkey Run (continuo, no carriles por “color mental”).
-2. **Doble blink / blink largo** vs simple (como wheelchair) para 2–3 comandos.
-3. **L/R conductual**: meta izquierda vs derecha + Attention alta + blink (etiqueta el estímulo; no “leer” L/R del EEG).
-4. Guardar siempre `color`, `side`, `att`, `blink`, `latency` para que una AI busque correlaciones — sin venderlo como decodificación.
+Estado → ver checklist canónica en [`docs/tasks.md`](../tasks.md).
+
+1. ✅ **Blink como comando** + estudios con export AI — hecho (`calibrate` / `portal`).
+2. ✅ **Attention continuo** en portería — hecho (`portal.html` power bar).
+3. ✅ **Visualización raw + FFT** — hecho (`wave.html`).
+4. ✅ **Null result color/lado/forma vs RT** — documentado (exam 2026-07-24).
+5. 🔓 **Attention → velocidad Monkey Run** — abierto (O01).
+6. 🔓 **Doble blink / blink largo** — abierto (O02).
 
 ## Tag del repo
 
-En GitHub → About → Topics: añadir `neurosky-mindwave`, `bci`, `eeg`, `thinkgear`.
+En GitHub → About → Topics: añadir `neurosky-mindwave`, `bci`, `eeg`, `thinkgear`, `fft`.
+
+---
+
+🥑 [aoxilus](https://github.com/aoxilus)

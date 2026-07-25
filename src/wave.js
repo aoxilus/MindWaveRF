@@ -11,6 +11,13 @@ const BANDS = [
   ['midGamma', 'Mid γ'],
 ]
 
+/** Escala Y raw MindWave (mismo bound que el scope). */
+const RAW_Y = 2048
+/** Puntos en pantalla + decimate → ~8 s @ 512 Hz. */
+const RAW_N = 320
+const RAW_DECIMATE = 12
+const BAND_N = 60
+
 const connEl = document.querySelector('#conn')
 const stateEl = document.querySelector('#state')
 const stateLabel = document.querySelector('#state-label')
@@ -25,21 +32,210 @@ const sigBar = document.querySelector('#sig-bar')
 const blinkBar = document.querySelector('#blink-bar')
 const hintEl = document.querySelector('#hint')
 const metaEl = document.querySelector('#meta')
+const hzEl = document.querySelector('#hz')
+const fftMetaEl = document.querySelector('#fft-meta')
 const canvas = document.querySelector('#raw')
 const ctx = canvas.getContext('2d')
+const fftSpecCanvas = document.querySelector('#fft-spec')
+const fftSpecCtx = fftSpecCanvas.getContext('2d')
+const fftLineCanvas = document.querySelector('#fft-line')
+const fftLineCtx = fftLineCanvas.getContext('2d')
 const bandGrid = document.querySelector('#band-grid')
 
-const RAW_N = 512
 const rawBuf = new Float32Array(RAW_N)
 let rawWrite = 0
+let rawSkip = 0
 let bandMax = 1
+
+/** FFT del raw a 512 Hz (no decimado). */
+const FS = 512
+const FFT_N = 256
+const FFT_HOP = 64
+const FMAX = 50
+const BIN_HZ = FS / FFT_N
+const FBIN_N = Math.floor(FMAX / BIN_HZ) + 1
+const fftRing = new Float32Array(FFT_N)
+let fftRingWrite = 0
+let fftRingFill = 0
+let fftSinceHop = 0
+const fftRe = new Float32Array(FFT_N)
+const fftIm = new Float32Array(FFT_N)
+const fftMag = new Float32Array(FBIN_N)
+const hann = new Float32Array(FFT_N)
+for (let i = 0; i < FFT_N; i++) hann[i] = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (FFT_N - 1)))
+let fftMagMax = 1
+let lastPeakHz = 0
+
+const bandHist = Object.fromEntries(BANDS.map(([k]) => [k, new Float32Array(BAND_N)]))
+const bandWrite = Object.fromEntries(BANDS.map(([k]) => [k, 0]))
+const bandCtx = {}
+
+/** Entero / k / M, sin decimales largos. */
+function fmtNum(v) {
+  if (v == null || Number.isNaN(v)) return '—'
+  const n = Math.round(Number(v))
+  const a = Math.abs(n)
+  if (a >= 1_000_000) return `${(n / 1e6).toFixed(1).replace(/\.0$/, '')}M`
+  if (a >= 1000) return `${(n / 1e3).toFixed(1).replace(/\.0$/, '')}k`
+  return String(n)
+}
+
+/** FFT radix-2 in-place (Cooley–Tukey). */
+function fftRadix2(re, im) {
+  const n = re.length
+  let j = 0
+  for (let i = 0; i < n; i++) {
+    if (i < j) {
+      let t = re[i]
+      re[i] = re[j]
+      re[j] = t
+      t = im[i]
+      im[i] = im[j]
+      im[j] = t
+    }
+    let m = n >> 1
+    while (m >= 1 && j >= m) {
+      j -= m
+      m >>= 1
+    }
+    j += m
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const half = len >> 1
+    const ang = (-2 * Math.PI) / len
+    const wR = Math.cos(ang)
+    const wI = Math.sin(ang)
+    for (let i = 0; i < n; i += len) {
+      let uR = 1
+      let uI = 0
+      for (let k = 0; k < half; k++) {
+        const p = i + k
+        const q = p + half
+        const tR = uR * re[q] - uI * im[q]
+        const tI = uR * im[q] + uI * re[q]
+        re[q] = re[p] - tR
+        im[q] = im[p] - tI
+        re[p] += tR
+        im[p] += tI
+        const nUR = uR * wR - uI * wI
+        uI = uR * wI + uI * wR
+        uR = nUR
+      }
+    }
+  }
+}
+
+function magToColor(t) {
+  const x = Math.max(0, Math.min(1, t))
+  if (x < 0.33) {
+    const u = x / 0.33
+    return `rgb(${Math.round(8 + 20 * u)},${Math.round(18 + 60 * u)},${Math.round(22 + 40 * u)})`
+  }
+  if (x < 0.66) {
+    const u = (x - 0.33) / 0.33
+    return `rgb(${Math.round(28 + 50 * u)},${Math.round(78 + 100 * u)},${Math.round(62 + 60 * u)})`
+  }
+  const u = (x - 0.66) / 0.34
+  return `rgb(${Math.round(78 + 140 * u)},${Math.round(178 + 50 * u)},${Math.round(106 - 40 * u)})`
+}
+
+function runFftFrame() {
+  if (fftRingFill < FFT_N) return false
+  for (let i = 0; i < FFT_N; i++) {
+    const v = fftRing[(fftRingWrite + i) % FFT_N]
+    fftRe[i] = v * hann[i]
+    fftIm[i] = 0
+  }
+  fftRadix2(fftRe, fftIm)
+  let peak = 0
+  let peakBin = 1
+  for (let k = 0; k < FBIN_N; k++) {
+    const mag = Math.hypot(fftRe[k], fftIm[k]) / (FFT_N / 2)
+    fftMag[k] = mag
+    if (k > 0 && mag > peak) {
+      peak = mag
+      peakBin = k
+    }
+  }
+  fftMagMax = Math.max(fftMagMax * 0.995, peak, 1e-3)
+  lastPeakHz = peakBin * BIN_HZ
+  return true
+}
+
+function pushFftSample(raw) {
+  fftRing[fftRingWrite % FFT_N] = raw
+  fftRingWrite++
+  if (fftRingFill < FFT_N) fftRingFill++
+  fftSinceHop++
+  if (fftSinceHop < FFT_HOP || fftRingFill < FFT_N) return
+  fftSinceHop = 0
+  if (!runFftFrame()) return
+  paintSpectrogramColumn()
+  if (fftMetaEl) {
+    fftMetaEl.textContent = `pico ~${Math.round(lastPeakHz)} Hz · 0–${FMAX} Hz · N=${FFT_N}`
+  }
+}
+
+function paintSpectrogramColumn() {
+  const w = fftSpecCanvas.width
+  const h = fftSpecCanvas.height
+  fftSpecCtx.drawImage(fftSpecCanvas, -2, 0)
+  const colW = 2
+  const x0 = w - colW
+  for (let k = 0; k < FBIN_N; k++) {
+    const t = Math.log10(1 + (9 * fftMag[k]) / fftMagMax)
+    const y1 = h - ((k + 1) / FBIN_N) * h
+    const y0 = h - (k / FBIN_N) * h
+    fftSpecCtx.fillStyle = magToColor(t)
+    fftSpecCtx.fillRect(x0, y1, colW, Math.max(1, y0 - y1))
+  }
+}
+
+function drawFftLine() {
+  const w = fftLineCanvas.width
+  const h = fftLineCanvas.height
+  fftLineCtx.fillStyle = 'rgba(5, 12, 10, 0.5)'
+  fftLineCtx.fillRect(0, 0, w, h)
+
+  const marks = [4, 8, 13, 30]
+  fftLineCtx.strokeStyle = 'rgba(255,255,255,0.08)'
+  fftLineCtx.fillStyle = 'rgba(160,180,170,0.45)'
+  fftLineCtx.font = '11px IBM Plex Mono, monospace'
+  for (const hz of marks) {
+    const x = (hz / FMAX) * w
+    fftLineCtx.beginPath()
+    fftLineCtx.moveTo(x, 0)
+    fftLineCtx.lineTo(x, h)
+    fftLineCtx.stroke()
+    fftLineCtx.fillText(`${hz}`, x + 3, 12)
+  }
+
+  fftLineCtx.strokeStyle = '#7dce6a'
+  fftLineCtx.lineWidth = 1.5
+  fftLineCtx.beginPath()
+  for (let k = 0; k < FBIN_N; k++) {
+    const x = (k / (FBIN_N - 1)) * w
+    const y = h - 4 - (Math.min(1, fftMag[k] / fftMagMax) * (h - 10))
+    if (k === 0) fftLineCtx.moveTo(x, y)
+    else fftLineCtx.lineTo(x, y)
+  }
+  fftLineCtx.stroke()
+}
 
 for (const [key, label] of BANDS) {
   const el = document.createElement('div')
   el.className = 'band'
-  el.innerHTML = `<label>${label}</label><b id="b-${key}">—</b><div class="bar"><i id="bi-${key}"></i></div>`
+  el.innerHTML = `<div class="band-head"><label>${label}</label><b id="b-${key}">—</b></div><canvas id="bc-${key}" width="280" height="56"></canvas>`
   bandGrid.appendChild(el)
+  const c = el.querySelector(`#bc-${key}`)
+  bandCtx[key] = c.getContext('2d')
 }
+
+if (hzEl) hzEl.textContent = `~${Math.round(512 / RAW_DECIMATE)} Hz · ${((RAW_N * RAW_DECIMATE) / 512).toFixed(0)} s`
+
+// fondo inicial espectrograma
+fftSpecCtx.fillStyle = '#050c0a'
+fftSpecCtx.fillRect(0, 0, fftSpecCanvas.width, fftSpecCanvas.height)
 
 function ema(prev, next, alpha) {
   if (prev == null || Number.isNaN(prev)) return next
@@ -293,8 +489,13 @@ function handle(data) {
   }
 
   if (typeof data.raw === 'number') {
-    rawBuf[rawWrite % RAW_N] = data.raw
-    rawWrite++
+    pushFftSample(data.raw)
+    rawSkip++
+    if (rawSkip >= RAW_DECIMATE) {
+      rawSkip = 0
+      rawBuf[rawWrite % RAW_N] = data.raw
+      rawWrite++
+    }
     // Detectar blink aunque poorSignal suba un instante (el blink ensucia la señal)
     blinks.fromRaw(data.raw, true, now)
   }
@@ -302,17 +503,50 @@ function handle(data) {
   if (data.bands) {
     for (const [key] of BANDS) {
       const v = data.bands[key] ?? 0
-      bandMax = Math.max(bandMax * 0.995, v, 1)
+      bandMax = Math.max(bandMax * 0.992, v, 1)
+      const hist = bandHist[key]
+      hist[bandWrite[key] % BAND_N] = v
+      bandWrite[key]++
       const el = document.querySelector(`#b-${key}`)
-      const bar = document.querySelector(`#bi-${key}`)
-      if (el) el.textContent = String(v)
-      if (bar) bar.style.width = `${Math.min(100, (v / bandMax) * 100)}%`
+      if (el) el.textContent = fmtNum(v)
     }
   }
 
   blinkEl.textContent = String(blinks.count())
   blinkBar.style.width = `${blinks.flashStrength(now)}%`
   updateState(now)
+}
+
+function drawBand(key) {
+  const c = bandCtx[key]
+  if (!c) return
+  const canvasEl = c.canvas
+  const w = canvasEl.width
+  const h = canvasEl.height
+  const hist = bandHist[key]
+  const start = bandWrite[key]
+  const maxY = Math.max(bandMax, 1)
+
+  c.fillStyle = 'rgba(0, 0, 0, 0.35)'
+  c.fillRect(0, 0, w, h)
+
+  c.strokeStyle = 'rgba(125, 206, 106, 0.15)'
+  c.beginPath()
+  c.moveTo(0, h - 1)
+  c.lineTo(w, h - 1)
+  c.stroke()
+
+  c.strokeStyle = '#5ec8b8'
+  c.lineWidth = 1.5
+  c.beginPath()
+  for (let i = 0; i < BAND_N; i++) {
+    const v = hist[(start + i) % BAND_N]
+    const x = (i / (BAND_N - 1)) * w
+    const y = h - 2 - (Math.min(v, maxY) / maxY) * (h - 6)
+    if (i === 0) c.moveTo(x, y)
+    else c.lineTo(x, y)
+  }
+  c.stroke()
 }
 
 function draw() {
@@ -338,11 +572,14 @@ function draw() {
   for (let i = 0; i < RAW_N; i++) {
     const v = rawBuf[(start + i) % RAW_N]
     const x = (i / (RAW_N - 1)) * w
-    const y = h / 2 - (v / 2048) * (h * 0.45)
+    const y = h / 2 - (v / RAW_Y) * (h * 0.45)
     if (i === 0) ctx.moveTo(x, y)
     else ctx.lineTo(x, y)
   }
   ctx.stroke()
+
+  drawFftLine()
+  for (const [key] of BANDS) drawBand(key)
   requestAnimationFrame(draw)
 }
 

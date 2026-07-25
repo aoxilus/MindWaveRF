@@ -51,13 +51,23 @@
       <section class="scope">
         <div class="scope-head">
           <h2>Raw EEG</h2>
-          <span id="hz">512 Hz</span>
+          <span id="hz">~43 Hz · 8 s</span>
         </div>
         <canvas id="raw" width="1200" height="220"></canvas>
       </section>
 
+      <section class="scope fft-scope">
+        <div class="scope-head">
+          <h2>FFT · Raw</h2>
+          <span id="fft-meta">256 pt · 0–50 Hz</span>
+        </div>
+        <canvas id="fft-spec" width="900" height="160"></canvas>
+        <canvas id="fft-line" width="900" height="90"></canvas>
+        <p class="fft-legend">δ 0–4 · θ 4–8 · α 8–13 · β 13–30 · γ 30–50 Hz</p>
+      </section>
+
       <section class="bands">
-        <h2>Espectro</h2>
+        <h2>Bandas NeuroSky</h2>
         <div id="band-grid" class="band-grid"></div>
       </section>
 

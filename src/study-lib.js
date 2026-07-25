@@ -3,13 +3,70 @@
  */
 export const WS_URL = 'ws://127.0.0.1:13855'
 
-/** Colores planos, alto contraste (sin gradient en el estímulo). */
+/** Colores planos vivos para el ojo (sin gradient en el estímulo). */
 export const FLAT_COLORS = [
-  { id: 'R', name: 'roja', css: '#E10600', shape: 'circle' },
-  { id: 'G', name: 'verde', css: '#00A651', shape: 'square' },
-  { id: 'B', name: 'azul', css: '#0057B8', shape: 'triangle' },
-  { id: 'Y', name: 'amarilla', css: '#FFD100', shape: 'diamond' },
+  { id: 'R', name: 'roja', css: '#FF1A1A', shape: 'circle' },
+  { id: 'G', name: 'verde', css: '#00E676', shape: 'square' },
+  { id: 'B', name: 'azul', css: '#2979FF', shape: 'triangle' },
+  { id: 'Y', name: 'amarilla', css: '#FFEA00', shape: 'diamond' },
+  { id: 'O', name: 'naranja', css: '#FF6D00', shape: 'circle' },
+  { id: 'M', name: 'magenta', css: '#FF00AA', shape: 'square' },
+  { id: 'C', name: 'cian', css: '#00E5FF', shape: 'diamond' },
+  { id: 'L', name: 'lima', css: '#C6FF00', shape: 'triangle' },
 ]
+
+/** Estudio posición × forma × color (independientes). */
+export const STUDY_SIDES = ['L', 'C', 'R']
+export const STUDY_SHAPES = ['circle', 'square', 'triangle']
+export const STUDY_COLORS = [
+  { id: 'R', name: 'roja', css: '#FF1A1A' },
+  { id: 'G', name: 'verde', css: '#00E676' },
+  { id: 'B', name: 'azul', css: '#2979FF' },
+]
+
+/** Plan balanceado: cada combo se repite `reps` veces (para AI). */
+export function buildBalancedTrialPlan({
+  sides = STUDY_SIDES,
+  shapes = STUDY_SHAPES,
+  colors = STUDY_COLORS,
+  reps = 2,
+} = {}) {
+  const plan = []
+  for (const side of sides) {
+    for (const shape of shapes) {
+      for (const color of colors) {
+        for (let r = 0; r < reps; r += 1) {
+          plan.push({
+            side,
+            shape,
+            colorId: color.id,
+            colorName: color.name,
+            colorCss: color.css,
+            rep: r + 1,
+            reps,
+          })
+        }
+      }
+    }
+  }
+  // Fisher–Yates
+  for (let i = plan.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[plan[i], plan[j]] = [plan[j], plan[i]]
+  }
+  return plan
+}
+
+/** Guarda JSON en localStorage + descarga silenciosa (sin UI). */
+export function saveStudyBackstage(filename, payload) {
+  try {
+    localStorage.setItem('mindwave-study-latest', JSON.stringify(payload))
+    localStorage.setItem('mindwave-study-latest-name', filename)
+  } catch {
+    // ignore quota
+  }
+  downloadJson(filename, payload)
+}
 
 export function createBlinkFromRaw({ peakMin = 380, deltaMin = 280, cooldownMs = 320 } = {}) {
   let prev = 0
@@ -121,8 +178,11 @@ export function createMindwaveClient({ onUpdate, onBlink } = {}) {
   }
 }
 
-/** Fondo con ruido (film grain). El estímulo debe quedarse plano. */
-export function applyNoiseBackground(el, { opacity = 0.12 } = {}) {
+/**
+ * Fondo con ruido de COLOR (no blanco/negro).
+ * El estímulo se queda plano encima.
+ */
+export function applyNoiseBackground(el, { opacity = 0.22, tint = null } = {}) {
   if (!el) return
   const size = 128
   const c = document.createElement('canvas')
@@ -131,16 +191,52 @@ export function applyNoiseBackground(el, { opacity = 0.12 } = {}) {
   const ctx = c.getContext('2d')
   const img = ctx.createImageData(size, size)
   for (let i = 0; i < img.data.length; i += 4) {
-    const v = (Math.random() * 255) | 0
-    img.data[i] = v
-    img.data[i + 1] = v
-    img.data[i + 2] = v
+    // RGB saturado aleatorio (no grayscale)
+    img.data[i] = (40 + Math.random() * 215) | 0
+    img.data[i + 1] = (40 + Math.random() * 215) | 0
+    img.data[i + 2] = (40 + Math.random() * 215) | 0
     img.data[i + 3] = 255
   }
   ctx.putImageData(img, 0, 0)
+  const base = tint || '#1a1a22'
+  el.style.backgroundColor = base
   el.style.backgroundImage = `url(${c.toDataURL('image/png')})`
-  el.style.backgroundSize = '128px 128px'
+  el.style.backgroundSize = '96px 96px'
+  el.style.backgroundBlendMode = 'overlay'
   el.dataset.noiseOpacity = String(opacity)
+  el.dataset.noiseTint = base
+}
+
+/** Tintes de fondo para variar el noise por ensayo. */
+export const NOISE_TINTS = [
+  { id: 'warm', css: '#3a2218' },
+  { id: 'cool', css: '#182838' },
+  { id: 'green', css: '#1a2e1a' },
+  { id: 'violet', css: '#2a1838' },
+  { id: 'neutral', css: '#222228' },
+]
+
+/** Efecto máquina de escribir. Devuelve Promise al terminar. */
+export function typewriter(el, text, { msPerChar = 28, onTick } = {}) {
+  return new Promise((resolve) => {
+    if (!el) {
+      resolve()
+      return
+    }
+    el.textContent = ''
+    let i = 0
+    const tick = () => {
+      if (i >= text.length) {
+        resolve()
+        return
+      }
+      el.textContent += text[i]
+      i += 1
+      onTick?.(i, text.length)
+      setTimeout(tick, msPerChar)
+    }
+    tick()
+  })
 }
 
 export function downloadJson(filename, payload) {
